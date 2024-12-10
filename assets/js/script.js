@@ -14,13 +14,14 @@ const searchByCuisineBtn = document.createElement('button');
 
 // Cuisine types for filter (categories available in TheMealDB)
 const cuisineTypes = [
-  'American', 'British', 'Canadian', 'Chinese', 'Croatian', 'Dutch', 'Egyptian', 'French',
+  'All', 'American', 'British', 'Canadian', 'Chinese', 'Croatian', 'Dutch', 'Egyptian', 'French',
   'Greek', 'Indian', 'Irish', 'Italian', 'Jamaican', 'Japanese', 'Kenyan', 'Malaysian',
   'Mexican', 'Moroccan', 'Polish', 'Portuguese', 'Russian', 'Spanish', 'Thai', 'Tunisian',
   'Turkish', 'Vietnamese'
 ];
 
 // Populate cuisine filter options
+cuisineFilterSelect.innerHTML = '';
 cuisineTypes.forEach(cuisine => {
   const option = document.createElement('option');
   option.value = cuisine.toLowerCase();
@@ -70,8 +71,10 @@ async function searchRecipes(searchType) {
       if (cuisine) {
         const cuisineResponse = await fetch(`${API_BASE_URL}/filter.php?a=${encodeURIComponent(cuisine)}`);
         const cuisineData = await cuisineResponse.json();
-        const cuisineMealIds = new Set(cuisineData.meals.map(meal => meal.idMeal));
-        filteredMeals = filteredMeals.filter(meal => cuisineMealIds.has(meal.idMeal));
+        if (cuisineData.meals) {
+          const cuisineMealIds = new Set(cuisineData.meals.map(meal => meal.idMeal));
+          filteredMeals = filteredMeals.filter(meal => cuisineMealIds.has(meal.idMeal));
+        }
       }
 
       displayRecipes(filteredMeals);
