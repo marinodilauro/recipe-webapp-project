@@ -7,6 +7,7 @@ const nameSearchBtn = document.getElementById('nameSearchBtn');
 const recipeResults = document.getElementById('recipeResults');
 const recipeModal = new bootstrap.Modal(document.getElementById('recipeModal'));
 const recipeModalBody = document.getElementById('recipeModalBody');
+const favoritesList = document.getElementById('favoritesList');
 
 // Event listeners
 nameSearchBtn.addEventListener('click', () => searchRecipes('name'));
@@ -110,6 +111,53 @@ async function viewRecipeDetails(recipeId) {
     console.error('Error fetching recipe details:', error);
     alert('Error fetching recipe details. Please try again later.');
   }
+}
+
+// Toggle Favorites
+function toggleFavorite(recipe) {
+  let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+  const index = favorites.findIndex(fav => fav.idMeal === recipe.idMeal);
+
+  if (index === -1) {
+    favorites.push({
+      idMeal: recipe.idMeal,
+      strMeal: recipe.strMeal,
+      strMealThumb: recipe.strMealThumb
+    });
+  } else {
+    favorites.splice(index, 1);
+  }
+
+  localStorage.setItem('favorites', JSON.stringify(favorites));
+  loadFavorites();
+}
+
+// Load favorites
+function loadFavorites() {
+  const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+  favoritesList.innerHTML = '';
+
+  favorites.forEach(favorite => {
+    const li = document.createElement('li');
+    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+    li.innerHTML = `
+      <a href="#" class="favorite-recipe-link" data-id="${favorite.idMeal}">
+        ${favorite.strMeal}
+      </a>
+      <button class="btn btn-sm btn-danger remove-favorite" data-id="${favorite.idMeal}">
+        <i class="fas fa-trash"></i>
+      </button>
+    `;
+
+    // Event to favorite recipes modal
+    li.querySelector('.favorite-recipe-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      viewRecipeDetails(favorite.idMeal);
+    });
+
+    li.querySelector('.remove-favorite').addEventListener('click', () => toggleFavorite(favorite));
+    favoritesList.appendChild(li);
+  });
 }
 
 
