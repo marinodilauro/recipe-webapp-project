@@ -5,10 +5,11 @@ const API_BASE_URL = 'https://www.themealdb.com/api/json/v1/1';
 const recipeNameSearchInput = document.getElementById('recipeNameSearch');
 const nameSearchBtn = document.getElementById('nameSearchBtn');
 const recipeResults = document.getElementById('recipeResults');
+const recipeModal = new bootstrap.Modal(document.getElementById('recipeModal'));
+const recipeModalBody = document.getElementById('recipeModalBody');
 
 // Event listeners
 nameSearchBtn.addEventListener('click', () => searchRecipes('name'));
-
 
 // Search recipes
 async function searchRecipes(searchType) {
@@ -76,6 +77,39 @@ function createRecipeCard(recipe) {
   card.querySelector('.favorite-recipe').addEventListener('click', () => toggleFavorite(recipe));
 
   return card;
+}
+
+// View Recipe Details
+async function viewRecipeDetails(recipeId) {
+  try {
+    const url = `${API_BASE_URL}/lookup.php?i=${recipeId}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    const recipe = data.meals[0];
+
+    const ingredients = [];
+    for (let i = 1; i <= 20; i++) {
+      if (recipe[`strIngredient${i}`]) {
+        ingredients.push(`${recipe[`strIngredient${i}`]} - ${recipe[`strMeasure${i}`]}`);
+      }
+    }
+
+    recipeModalBody.innerHTML = `
+            <h2>${recipe.strMeal}</h2>
+            <img src="${recipe.strMealThumb}" alt="${recipe.strMeal}" class="img-fluid mb-3">
+            <h3>Ingredients:</h3>
+            <ul>
+                ${ingredients.map(ingredient => `<li>${ingredient}</li>`).join('')}
+            </ul>
+            <h3>Instructions:</h3>
+            <p>${recipe.strInstructions}</p>
+        `;
+
+    recipeModal.show();
+  } catch (error) {
+    console.error('Error fetching recipe details:', error);
+    alert('Error fetching recipe details. Please try again later.');
+  }
 }
 
 
