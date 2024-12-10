@@ -3,25 +3,62 @@ const API_BASE_URL = 'https://www.themealdb.com/api/json/v1/1';
 
 // DOM Elements
 const recipeNameSearchInput = document.getElementById('recipeNameSearch');
-const nameSearchBtn = document.getElementById('nameSearchBtn');
+const ingredientSearchInput = document.getElementById('ingredientSearch');
 const recipeResults = document.getElementById('recipeResults');
 const recipeModal = new bootstrap.Modal(document.getElementById('recipeModal'));
 const recipeModalBody = document.getElementById('recipeModalBody');
 const favoritesList = document.getElementById('favoritesList');
+const ingredientSearchBtn = document.getElementById('ingredientSearchBtn');
+const cuisineFilterSelect = document.getElementById('cuisineFilter');
+const searchByCuisineBtn = document.createElement('button');
+
+// Cuisine types for filter (categories available in TheMealDB)
+const cuisineTypes = [
+  'American', 'British', 'Canadian', 'Chinese', 'Croatian', 'Dutch', 'Egyptian', 'French',
+  'Greek', 'Indian', 'Irish', 'Italian', 'Jamaican', 'Japanese', 'Kenyan', 'Malaysian',
+  'Mexican', 'Moroccan', 'Polish', 'Portuguese', 'Russian', 'Spanish', 'Thai', 'Tunisian',
+  'Turkish', 'Vietnamese'
+];
+
+// Populate cuisine filter options
+cuisineTypes.forEach(cuisine => {
+  const option = document.createElement('option');
+  option.value = cuisine.toLowerCase();
+  option.textContent = cuisine;
+  cuisineFilterSelect.appendChild(option);
+});
 
 // Event listeners
 nameSearchBtn.addEventListener('click', () => searchRecipes('name'));
+ingredientSearchBtn.addEventListener('click', () => searchRecipes('ingredient'));
+document.addEventListener('DOMContentLoaded', loadFavorites);
+
+// Adding button and event for cuisine types search
+searchByCuisineBtn.textContent = 'Cerca per Cucina';
+searchByCuisineBtn.className = 'btn btn-primary mt-2';
+searchByCuisineBtn.addEventListener('click', searchByCuisine);
+cuisineFilterSelect.parentNode.appendChild(searchByCuisineBtn);
 
 // Search recipes
 async function searchRecipes(searchType) {
+  const cuisine = cuisineFilterSelect.value;
   let searchTerm, url;
 
-  searchTerm = recipeNameSearchInput.value;
-  if (!searchTerm) {
-    alert('Please enter a recipe name');
-    return;
+  if (searchType === 'name') {
+    searchTerm = recipeNameSearchInput.value;
+    if (!searchTerm) {
+      alert('Please enter a recipe name');
+      return;
+    }
+    url = `${API_BASE_URL}/search.php?s=${encodeURIComponent(searchTerm)}`;
+  } else {
+    searchTerm = ingredientSearchInput.value;
+    if (!searchTerm) {
+      alert('Please enter at least one ingredient');
+      return;
+    }
+    url = `${API_BASE_URL}/filter.php?i=${encodeURIComponent(searchTerm)}`;
   }
-  url = `${API_BASE_URL}/search.php?s=${encodeURIComponent(searchTerm)}`;
 
   try {
     const response = await fetch(url);
@@ -29,6 +66,13 @@ async function searchRecipes(searchType) {
 
     if (data.meals) {
       let filteredMeals = data.meals;
+
+      if (cuisine) {
+        const cuisineResponse = await fetch(`${API_BASE_URL}/filter.php?a=${encodeURIComponent(cuisine)}`);
+        const cuisineData = await cuisineResponse.json();
+        const cuisineMealIds = new Set(cuisineData.meals.map(meal => meal.idMeal));
+        filteredMeals = filteredMeals.filter(meal => cuisineMealIds.has(meal.idMeal));
+      }
 
       displayRecipes(filteredMeals);
     } else {
@@ -160,6 +204,26 @@ function loadFavorites() {
   });
 }
 
+// Search by cuisine type
+async function searchByCuisine() {
+  const selectedCuisine = cuisineFilterSelect.value;
+
+  try {
+    // Fetch recipes by area (cuisine)
+    const url = `${API_BASE_URL}/filter.php?a=${encodeURIComponent(selectedCuisine)}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.meals) {
+      displayRecipes(data.meals);
+    } else {
+      recipeResults.innerHTML = '<p>Nessuna ricetta trovata per questa cucina.</p>';
+    }
+  } catch (error) {
+    console.error('Errore nel recuperare le ricette per cucina:', error);
+    recipeResults.innerHTML = '<p class="text-danger">Errore nel recuperare le ricette. Riprova più tardi.</p>';
+  }
+}
 
 
 
